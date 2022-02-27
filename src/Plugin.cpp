@@ -134,9 +134,10 @@ namespace
 
                 std::size_t index = 0;
                 constexpr const char Prefix[] = "String_";
-                constexpr std::size_t PrefixSize = std::size(Prefix);
+                // 去除结尾 0
+                constexpr std::size_t PrefixSize = std::size(Prefix) - 1;
                 // 足以表示 std::uint64_t 的最大值
-                constexpr auto BufferSize = PrefixSize + 20;
+                constexpr auto BufferSize = PrefixSize + 21;
                 std::string name = Prefix;
                 name.reserve(BufferSize);
 
