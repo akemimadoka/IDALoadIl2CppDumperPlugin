@@ -10,7 +10,6 @@
 
 #include <charconv>
 #include <fstream>
-#include <format>
 
 #define ACTION_NAME "IDALoadIl2CppDumperPlugin::Load"
 #define LOG_PREFIX ACTION_NAME ": "
@@ -105,21 +104,26 @@ namespace
                     const auto signature = elem["Signature"].get_string().value();
                     const auto typeSignature = elem["TypeSignature"].get_string().value();
 
-                    if (!set_name(address, name.data(), SN_NOWARN | SN_NOCHECK))
+                    if (!has_user_name(get_flags(address)))
                     {
-                        msg(LOG_PREFIX "Failed to set method name at 0x%016" PRIx64 " to %s\n", address, name.data());
-                        continue;
-                    }
+                        if (!set_name(address, name.data(), SN_NOWARN | SN_NOCHECK))
+                        {
+                            msg(LOG_PREFIX "Failed to set method name at 0x%016" PRIx64 " to %s\n", address, name.data());
+                            continue;
+                        }
 
-                    if (!apply_cdecl(nullptr, address, signature.data()))
-                    {
-                        msg(LOG_PREFIX "Cannot apply signature at 0x%016" PRIx64 " to %s\n", address, signature.data());
-                        continue;
+                        if (!apply_cdecl(nullptr, address, signature.data()))
+                        {
+                            msg(LOG_PREFIX "Cannot apply signature at 0x%016" PRIx64 " to %s\n", address, signature.data());
+                            continue;
+                        }
                     }
-
-                    if (!set_cmt(address, typeSignature.data(), true))
+                    else
                     {
-                        msg(LOG_PREFIX "Cannot add comment at 0x%016" PRIx64 " to %s\n", address, typeSignature.data());
+                        if (!set_cmt(address, signature.data(), true))
+                        {
+                            msg(LOG_PREFIX "Cannot set comment at 0x%016" PRIx64 " to %s\n", address, signature.data());
+                        }
                     }
                 }
             }
@@ -174,8 +178,7 @@ namespace
                 msg(LOG_PREFIX "Document does not contain ScriptString\n");
             }
 
-            simdjson::dom::array scriptMetadatas;
-            if (doc["ScriptMetadata"].get(scriptMetadatas))
+            if (const auto scriptMetadatas = doc["ScriptMetadata"].get_array(); scriptMetadatas.error() == simdjson::SUCCESS)
             {
                 msg(LOG_PREFIX "Found %zu script metadatas\n", scriptMetadatas.size());
 
@@ -212,7 +215,7 @@ namespace
                 for (const auto elem : scriptMetadataMethods)
                 {
                     const auto address = elem["Address"].get_uint64().value() + imageBase;
-                    const auto name = elem["MethodAddress"].get_string().value();
+                    const auto name = elem["Name"].get_string().value();
                     const auto methodAddress = elem["MethodAddress"].get_uint64().value() + imageBase;
 
                     if (!set_name(address, name.data(), SN_NOWARN | SN_NOCHECK))
