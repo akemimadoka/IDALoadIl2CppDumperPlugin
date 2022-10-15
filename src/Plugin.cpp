@@ -141,7 +141,7 @@ namespace
                 // 去除结尾 0
                 constexpr std::size_t PrefixSize = std::size(Prefix) - 1;
                 // 足以表示 std::uint64_t 的最大值
-                constexpr auto BufferSize = PrefixSize + 21;
+                constexpr auto BufferSize = PrefixSize + std::numeric_limits<std::uint64_t>::digits10 + 1;
                 std::string name = Prefix;
                 name.reserve(BufferSize);
 
@@ -224,7 +224,7 @@ namespace
                         continue;
                     }
 
-                    char methodAddressStr[17];
+                    char methodAddressStr[std::numeric_limits<std::uintptr_t>::digits / (16 / std::numeric_limits<std::uint64_t>::radix) + 1];
                     if (const auto [end, ec] = std::to_chars(methodAddressStr, std::end(methodAddressStr), methodAddress, 16); ec != std::errc{}) [[unlikely]]
                     {
                         msg(LOG_PREFIX "Cannot create method address string, this is a bug, please file an issue to the author\n");
